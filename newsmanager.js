@@ -568,15 +568,22 @@ app.FileUploader.prototype.uploadFileThenSavePath = function(file){
 			}).done(function(data){
 				// console.log(data);
 				try{var results = $.parseJSON(data); } catch(e){throw e;}
-				console.log(results);
-				if (results.status == 'success')
+				// console.log(results);
+				if (results.status == 'success'){
 					$input.val(results.path)
+				} else {
+					notif[results.status](results.msg);
+					console.log(results.status+': ',results.msg);
+					console.log(results.trace);
+				}
 				resolve();
 			}).fail(function(jqXHR, textStatus){
 				console.log(jqXHR, textStatus);
 				reject();
 			});
   		})
+	}).catch(function(e){
+		console.log(e);
 	});
 }
 
