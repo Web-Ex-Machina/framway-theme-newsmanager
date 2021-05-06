@@ -412,8 +412,11 @@ app.setupSections = function(){
 			if (checkForm.valid) {
        			var fields = {};
        			$.each(checkForm.inputs,function(){
-       				if (this.name != 'id' && this.name != 'lang') 
+       				if (this.name != 'id' && this.name != 'lang'){
         		    	fields[this.name] = this.value;
+        		    	if ((this.name == 'image' || this.name == 'document') && this.value === undefined) 
+        		    		fields[this.name] = '';
+       				}
         		});
        			var content = [];
         		$('.wem_nm__vb .wem_nm__vb__item').each(function(i,item){
