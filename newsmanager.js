@@ -554,8 +554,11 @@ app.FileUploader.prototype.uploadFileThenSavePath = function(file){
   return new Promise(function(resolve,reject){
   		fileUploader.addBase64File(file).then(function($input){
   			console.log('b64 added');
+  			var $loader = $('<div class="loader"><i class="fas fa-circle-notch fa-spin"></i></div>');
+  			$input.closest('.fileUploader__wrapper').find('.preview__item').append($loader);
+  			$('.wem_nm__actions button[data-dir=final]').addClass('no-events opa-5');
 			$.ajax({
-				timeout: 10000,
+				timeout: 20000,
 				url: window.location.pathname,
 				type: 'post',
 				data:{
@@ -565,13 +568,14 @@ app.FileUploader.prototype.uploadFileThenSavePath = function(file){
 					'id': $('.wem_nm__sections input[name=id]').val(),
 					'b64': $input.val(),
 					'name': $input.attr('data-filename'),
+					'headline': $('.mod_wem_nm_editnews .wem_nm__section[data-step=0] input#field_headline').val(),
 					'extension': $input.attr('data-filename').split('.')[1],
 				}
-				// beforeSend: function(xhr) {console.log(xhr); },
+				,beforeSend: function(xhr) {console.log(xhr); },
 			}).done(function(data){
-				// console.log(data);
+				console.log('saveFile - data: ',data);
 				try{var results = $.parseJSON(data); } catch(e){throw e;}
-				// console.log(results);
+				console.log('saveFile - results: ',results);
 				if (results.status == 'success'){
 					$input.val(results.path)
 				} else {
@@ -583,6 +587,10 @@ app.FileUploader.prototype.uploadFileThenSavePath = function(file){
 			}).fail(function(jqXHR, textStatus){
 				console.log(jqXHR, textStatus);
 				reject();
+			}).done(function(){
+				console.log('unlock form');
+				$loader.remove();
+				$('.wem_nm__actions button[data-dir=final]').removeClass('no-events opa-5');
 			});
   		})
 	}).catch(function(e){
