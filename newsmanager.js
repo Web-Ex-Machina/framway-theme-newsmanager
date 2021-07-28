@@ -526,26 +526,38 @@ app.FileUploader.prototype.setupForNewsManager = function(){
 				fileUploader.$wrapper.append('<input type="hidden" class="fileUploader__input" '+fileUploader.dataAttr+'="'+fileUploader.name+'" value="'+file+'" data-filename="'+file.split('/')[file.split('/').length-1]+'" />');
   		}
 	}
+	fileUploader.$label.on('click',function(){
+		if (!fileUploader.$preview.find('.preview__item').length) {
+			fileUploader.$el.val(null)
+		}
+	})
 
-	fileUploader.$el.on('change',function(){
+	fileUploader.$el.off('change').on('change',function(){
 		if (this.files.length){
+			fileUploader.displayError(false);
+		    fileUploader.$wrapper.find('input[type=hidden]').remove();
+		    fileUploader.$preview.find('.preview__item').remove();
 			var i = 1;
 			for(var file of this.files){
 				var valid = true;
+				console.log(i , fileUploader.maxFiles);
 				if (fileUploader.maxFiles && i > fileUploader.maxFiles){
+          			fileUploader.displayError('You can\'t upload more than '+fileUploader.maxFiles+' files.');
 					valid = false;
 				}
 				if (fileUploader.allowed && !fileUploader.allowed.includes(file.type.split('/')[1])){
+          			fileUploader.displayError('You can\'t upload a '+file.type.split('/')[1]+' file. Allowed extensions: '+fileUploader.allowed.join(', '));
 					valid = false;
 				}
 				if (valid) {
 					if (fileUploader.mode == "custom") 
 						fileUploader.uploadFileThenSavePath(file);
-					i++;
 				}
+				i++;
 			}
 		}
 	});
+
 }
 
 app.FileUploader.prototype.uploadFileThenSavePath = function(file){
@@ -555,7 +567,7 @@ app.FileUploader.prototype.uploadFileThenSavePath = function(file){
   		fileUploader.addBase64File(file).then(function($input){
   			console.log('b64 added');
   			var $loader = $('<div class="loader"><i class="fas fa-circle-notch fa-spin"></i></div>');
-  			$input.closest('.fileUploader__wrapper').find('.preview__item').append($loader);
+  			$input.closest('.fileUploader__wrapper').find('label').append($loader);
   			$('.wem_nm__actions button[data-dir=final]').addClass('no-events opa-5');
 			$.ajax({
 				timeout: 20000,
@@ -571,26 +583,30 @@ app.FileUploader.prototype.uploadFileThenSavePath = function(file){
 					'headline': $('.mod_wem_nm_editnews .wem_nm__section[data-step=0] input#field_headline').val(),
 					'extension': $input.attr('data-filename').split('.')[1],
 				}
-				,beforeSend: function(xhr) {console.log(xhr); },
+				// ,beforeSend: function(xhr) {console.log(xhr); },
 			}).done(function(data){
 				console.log('saveFile - data: ',data);
 				try{var results = $.parseJSON(data); } catch(e){throw e;}
 				console.log('saveFile - results: ',results);
 				if (results.status == 'success'){
+					fileUploader.addPreviewImg(file);
 					$input.val(results.path)
 				} else {
 					notif[results.status](results.msg);
 					console.log(results.status+': ',results.msg);
 					console.log(results.trace);
 				}
-				resolve();
-			}).fail(function(jqXHR, textStatus){
-				console.log(jqXHR, textStatus);
-				reject();
-			}).done(function(){
 				console.log('unlock form');
 				$loader.remove();
 				$('.wem_nm__actions button[data-dir=final]').removeClass('no-events opa-5');
+				resolve();
+			}).fail(function(jqXHR, textStatus){
+				console.log(jqXHR, textStatus);
+				console.log('unlock form');
+				$loader.remove();
+				notif.error('error: '+textStatus);
+				$('.wem_nm__actions button[data-dir=final]').removeClass('no-events opa-5');
+				reject();
 			});
   		})
 	}).catch(function(e){
